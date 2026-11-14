@@ -92,7 +92,7 @@ export function ServiceProviderDirectoryPage() {
       <div className="sd-provider-grid">
         {visibleProviders.map((provider) => (
           <article className="sd-provider-card" key={provider.id}>
-            <div className="sd-provider-photo"><img src={provider.image_url || '/assets/event-culture.jpg'} alt={`${provider.name} listing`} /><span>{provider.category}</span></div>
+            <div className="sd-provider-photo"><img src={provider.image_url || '/assets/event-culture.webp'} alt={`${provider.name} listing`} loading="lazy" decoding="async" /><span>{provider.category}</span></div>
             <div className="sd-provider-card-body"><div className="sd-provider-title-row"><h2>{provider.name}</h2><span className="sd-provider-approved" aria-label="Active listing"><Check size={13} /></span></div>
               <p className="sd-provider-category">{provider.category}</p><div className="sd-provider-rating"><Star size={14} fill="currentColor" aria-hidden="true" /><strong>{provider.rating}</strong><span>({provider.reviews} reviews)</span></div>
               <div className="sd-provider-meta"><span><MapPin size={14} aria-hidden="true" />{provider.location}</span><strong>From KSh {provider.price_from_kes.toLocaleString()}</strong></div>

@@ -7,7 +7,15 @@ export type PaymentStatus = 'NOT_REQUIRED' | 'PENDING' | 'PAID' | 'FAILED' | 'RE
 
 export type ApiVenue = { id: string; name: string; kind?: string; venue_type?: string; description: string | null; building: string | null; location: string; image_url: string | null; capacity: number; hourly_rate_kes: string; minimum_booking_minutes: number; advance_notice_hours: number; requires_approval: boolean; status: 'ACTIVE' | 'INACTIVE'; facilities?: string[]; };
 export type ApiOrganization = { id: string; name: string; slug: string; organization_type: 'CLUB' | 'DEPARTMENT' | 'EXTERNAL'; status: OrganizationStatus; };
-export type ApiOrganizationMembership = { organization_id: string; organization_name: string; organization_status: OrganizationStatus; role: string; membership_status: string; };
+export type ApiOrganizationMembership = {
+  id?: string;
+  organization_id: string;
+  name: string;
+  slug?: string;
+  membership_role: string;
+  organization_status?: OrganizationStatus;
+  membership_status?: string;
+};
 
 export type ApiUser = { id: string; email: string; full_name: string; phone_number: string | null; status: UserStatus; email_verified_at?: string | null; created_at: string; updated_at: string; roles: RoleName[]; organizations: ApiOrganizationMembership[]; };
 export type AuthResponse = { access_token: string; refresh_token: string; token_type: 'bearer'; user: ApiUser; };
@@ -82,10 +90,10 @@ export type ApiCertificate = { id: string; registration_id: string; event_id: st
 export type ApiCertificateVerification = { valid: boolean; verification_code: string; certificate?: ApiCertificate | null; message: string; recipient_name?: string; event_title?: string; };
 
 // Compatibility aliases used across the app
-export type TokenResponse = AuthResponse;
+export type TokenResponse = { access_token: string; refresh_token: string; token_type: string; user?: ApiUser | null };
 export type AuthCredentials = LoginRequest;
 export type CurrentUser = ApiUser;
-export type RegisterResponse = { user: ApiUser; message?: string } | ApiUser;
+export type RegisterResponse = { message?: string; email?: string; requires_email_verification?: boolean };
 export type RegistrationDetails = RegisterRequest;
 export type MessageResponse = { message: string; detail?: string };
 export type ApiErrorPayload = { error?: { message?: string; code?: string; details?: Array<Record<string, unknown>>; request_id?: string }; detail?: string; message?: string };
