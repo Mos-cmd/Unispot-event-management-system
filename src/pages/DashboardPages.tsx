@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import {
   ArrowRight,
   Bell,
@@ -167,7 +167,7 @@ function BookingPanel({
   if (bookings.length === 0) return <div className="empty-state"><h3>No bookings yet</h3><p>Book a venue to see it here.</p></div>;
   return <div className="booking-list">{bookings.map((booking) => <article className="dashboard-booking-row" key={booking.id}>
     <span className="booking-thumb"><CalendarCheck size={18} /></span>
-    <div className="booking-row-main"><strong>{booking.venue_name}</strong><span>{formatBookingDate(booking.starts_at)} â€“ {formatBookingDate(booking.ends_at)}</span><small>{(booking.title || booking.venue_name)} Â· {booking.expected_attendance} attendees</small></div>
+    <div className="booking-row-main"><strong>{booking.venue_name}</strong><span>{formatBookingDate(booking.starts_at)} – {formatBookingDate(booking.ends_at)}</span><small>{(booking.title || booking.venue_name)} · {booking.expected_attendance} attendees</small></div>
     <span className={`status-pill status-pill--${booking.status.toLowerCase()}`}>{booking.status}</span>
     {booking.status === 'CONFIRMED' && <button className="text-button" type="button" disabled={cancellingId === booking.id} onClick={() => void onCancel(booking)}>{cancellingId === booking.id ? 'Cancellingâ€¦' : 'Cancel'}</button>}
     <Link to={`/venues/${booking.venue_id}`} className="row-chevron" aria-label={`View ${booking.venue_name}`}><ChevronRight size={17} /></Link>
@@ -337,7 +337,7 @@ export function OrganizerDashboardPage() {
           <div className="button-row">
             <Link className="button button--outline" to="/venues">Book venue</Link>
             <Link className="button button--outline" to="/services/service-provider-directory">Ask for services</Link>
-            <button className="button button--primary" type="button" onClick={() => { setCreatingEvent((v) => !v); setDraftMessage(''); }}>{creatingEvent ? 'Close event form' : 'Create event'} <span aria-hidden="true">{creatingEvent ? 'âˆ’' : '+'}</span></button>
+            <button className="button button--primary" type="button" onClick={() => { setCreatingEvent((v) => !v); setDraftMessage(''); }}>{creatingEvent ? 'Close event form' : 'Create event'} <span aria-hidden="true">{creatingEvent ? '−' : '+'}</span></button>
           </div>
         </div>
         {draftMessage && <p className="inline-success" role="status">{draftMessage}</p>}
@@ -369,7 +369,7 @@ export function OrganizerDashboardPage() {
         <section className="dashboard-panel" id="events">
           <div className="panel-heading"><div><h2>My events</h2><p>Events you can manage (creator-owned or admin; legacy organizer access where permitted).</p></div><Link className="text-link" to="/events">Public events <ArrowRight size={15} /></Link></div>
           <div className="organizer-event-list">
-            {events.map((e) => (<article className="organizer-event-row" key={e.id}><div><strong>{e.title}</strong><span>{fmt(e.starts_at)} Â· {e.location || 'Campus'} Â· {e.confirmed_registrations}/{e.capacity} registered</span></div><div className="button-row"><span className={`status-pill status-pill--${e.status.toLowerCase()}`}>{e.status}</span><button type="button" className="button button--outline button--small" onClick={() => setSelectedEventId(e.id)}>Manage day</button></div></article>))}
+            {events.map((e) => (<article className="organizer-event-row" key={e.id}><div><strong>{e.title}</strong><span>{fmt(e.starts_at)} · {e.location || 'Campus'} · {e.confirmed_registrations}/{e.capacity} registered</span></div><div className="button-row"><span className={`status-pill status-pill--${e.status.toLowerCase()}`}>{e.status}</span><button type="button" className="button button--outline button--small" onClick={() => setSelectedEventId(e.id)}>Manage day</button></div></article>))}
             {events.length === 0 && <p className="muted">No manageable events yet. Create an event, or ask an admin if you need access to legacy events.</p>}
           </div>
         </section>
@@ -384,11 +384,11 @@ export function OrganizerDashboardPage() {
         <section className="dashboard-panel" id="registrations">
           <div className="panel-heading"><div><h2>Event-day attendance & operations</h2><p>Check in attendees and monitor registrations for selected event days.</p></div><QrCode size={18} aria-hidden="true" /></div>
           {events.length === 0 ? <p className="muted">Create or gain access to an event to manage attendance.</p> : <>
-            <label className="admin-field" style={{ maxWidth: 520 }}><span>Event</span><select value={selectedEventId} onChange={(e) => setSelectedEventId(e.target.value)}>{events.map((e) => <option key={e.id} value={e.id}>{e.title} Â· {fmt(e.starts_at)}</option>)}</select></label>
-            {selectedEvent && <p className="muted" style={{ marginTop: 8 }}><strong>{selectedEvent.title}</strong> â€” {fmt(selectedEvent.starts_at)} to {fmt(selectedEvent.ends_at)} Â· {selectedEvent.location || 'Campus'}</p>}
+            <label className="admin-field" style={{ maxWidth: 520 }}><span>Event</span><select value={selectedEventId} onChange={(e) => setSelectedEventId(e.target.value)}>{events.map((e) => <option key={e.id} value={e.id}>{e.title} · {fmt(e.starts_at)}</option>)}</select></label>
+            {selectedEvent && <p className="muted" style={{ marginTop: 8 }}><strong>{selectedEvent.title}</strong> — {fmt(selectedEvent.starts_at)} to {fmt(selectedEvent.ends_at)} · {selectedEvent.location || 'Campus'}</p>}
             {attendance && <div className="metric-grid metric-grid--four" style={{ marginTop: 12 }}><MetricCard label="Registered" value={String(attendance.confirmed_registrations)} icon={Users} tone="blue" /><MetricCard label="Checked in" value={String(attendance.checked_in_registrations)} icon={Check} tone="mint" /><MetricCard label="Not checked in" value={String((attendance.confirmed_registrations - attendance.checked_in_registrations))} icon={ClipboardList} tone="peach" /><MetricCard label="Attendance rate" value={`${(attendance.confirmed_registrations ? Math.round((attendance.checked_in_registrations/attendance.confirmed_registrations)*100) : 0)}%`} icon={CalendarCheck} tone="purple" /></div>}
             {opsMessage && <p className={/checked in/i.test(opsMessage) ? 'inline-success' : 'form-error'} role="status">{opsMessage}</p>}
-            {loadingOps ? <p className="form-status">Loading registrationsâ€¦</p> : <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Registrant</th><th>Email</th><th>Status</th><th>Checked in</th><th>Action</th></tr></thead><tbody>{registrations.map((r) => <tr key={r.id}><td>{r.full_name}</td><td>{r.email}</td><td>{r.status}</td><td>{r.checked_in_at ? formatBookingDate(r.checked_in_at) : 'â€”'}</td><td>{r.checked_in_at ? <span className="status-pill status-pill--confirmed">Checked in</span> : <button type="button" className="button button--outline button--small" onClick={() => { void checkIn(r.id); }}>Check in</button>}</td></tr>)}{registrations.length === 0 && <tr><td className="admin-empty-cell" colSpan={5}>No registrations for this event.</td></tr>}</tbody></table></div>}
+            {loadingOps ? <p className="form-status">Loading registrationsâ€¦</p> : <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Registrant</th><th>Email</th><th>Status</th><th>Checked in</th><th>Action</th></tr></thead><tbody>{registrations.map((r) => <tr key={r.id}><td>{r.full_name}</td><td>{r.email}</td><td>{r.status}</td><td>{r.checked_in_at ? formatBookingDate(r.checked_in_at) : '—'}</td><td>{r.checked_in_at ? <span className="status-pill status-pill--confirmed">Checked in</span> : <button type="button" className="button button--outline button--small" onClick={() => { void checkIn(r.id); }}>Check in</button>}</td></tr>)}{registrations.length === 0 && <tr><td className="admin-empty-cell" colSpan={5}>No registrations for this event.</td></tr>}</tbody></table></div>}
           </>}
         </section>
         <section className="dashboard-panel" id="announcements">
