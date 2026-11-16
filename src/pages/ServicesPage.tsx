@@ -4,7 +4,7 @@ import { Brand } from '../components/Brand';
 import { useAuth } from '../auth/AuthProvider';
 import { serviceItems, type PreviewKind } from '../data/services';
 
-const STUDENT_HIDDEN_SERVICE_IDS = new Set(['service-provider-directory']);
+const STUDENT_HIDDEN_SERVICE_IDS = new Set(['event-registration-rsvp', 'service-provider-directory', 'equipment-reservations']);
 
 function ServicePreview({ kind }: { kind: PreviewKind }) {
   if (kind === 'registration') return <div className="preview-registration"><strong>Register for Event</strong><span>Full name</span><span>Email address</span><em>Register</em></div>;

@@ -1797,6 +1797,33 @@ img { display: block; max-width: 100%; }
 .admin-panel-link:hover {
   text-decoration:underline
 }
+.admin-image-panel {
+  border:1px dashed #c7ccd8;
+  background:#f8f9fc;
+  padding:12px;
+  border-radius:10px;
+  margin-top:10px
+}
+.admin-image-panel .admin-field {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px
+}
+.admin-image-preview {
+  margin-top:10px;
+  border:1px solid #d7dce8;
+  border-radius:8px;
+  overflow:hidden;
+  max-width:300px;
+  max-height:200px;
+  background:#fff
+}
+.admin-image-preview img {
+  width:100%;
+  height:auto;
+  display:block
+}
 .admin-chart-summary {
   display:flex;
   align-items:center;
@@ -1930,6 +1957,70 @@ img { display: block; max-width: 100%; }
   color:#35405a;
   font-size:9px
 }
+.admin-popular-venues {
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  min-height:200px
+}
+.admin-pie {
+  width:112px;
+  height:112px;
+  display:block;
+  position:relative
+}
+.admin-pie-center {
+  position:absolute;
+  top:0;
+  left:0;
+  width:112px;
+  height:112px;
+  display:grid;
+  place-items:center;
+  text-align:center;
+  color:#35405a;
+  font-size:9px;
+  font-weight:700
+}
+.admin-pie-center small {
+  display:block;
+  color:#9299a7;
+  font-size:8px;
+  font-weight:450;
+  margin-top:2px
+}
+.admin-pie-legend {
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  align-items:flex-start;
+  font-size:8px
+}
+.admin-pie-legend li {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  color:#35405a
+}
+.admin-pie-legend li i {
+  width:7px;
+  height:7px;
+  border-radius:50%;
+  flex:none
+}
+.admin-pie-legend li strong {
+  color:#35405a;
+  font-size:9px;
+  margin-right:4px
+}
+.admin-pie-legend li small {
+  color:#9aa2b0
+}
 .admin-activity-list {
   list-style:none;
   margin:0;
@@ -1967,6 +2058,20 @@ img { display: block; max-width: 100%; }
   font-size:8px;
   color:#9aa2b0
 }
+.admin-activity-outcome {
+  font-size:7px;
+  text-transform:uppercase;
+  letter-spacing:0.4px;
+  padding:1px 6px;
+  border-radius:10px;
+  margin-left:auto;
+  white-space:nowrap;
+  font-weight:650
+}
+.admin-activity-outcome--success,.admin-activity-outcome--completed { background:#e7f6ec; color:#1d7a34 }
+.admin-activity-outcome--pending,.admin-activity-outcome--waiting { background:#fdf3e3; color:#9a6200 }
+.admin-activity-outcome--denied,.admin-activity-outcome--cancel,.admin-activity-outcome--failed { background:#fdeeee; color:#b00020 }
+.admin-activity-outcome--neutral { background:#eef1f5; color:#5f6b80 }
 .admin-dashboard-bottom {
   display:grid;
   grid-template-columns:minmax(250px,.82fr) minmax(0,1.8fr);

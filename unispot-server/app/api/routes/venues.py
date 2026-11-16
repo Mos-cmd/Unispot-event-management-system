@@ -1,11 +1,12 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, status, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies.auth import require_venue_admin
 from app.api.dependencies.database import get_db
+from app.core.config import get_settings
 from app.models.user import User
 from app.models.venue import Venue, VenueStatus
 from app.models.venue_block import VenueBlock
@@ -31,6 +32,7 @@ from app.services.venue_service import (
     list_operating_hours,
     list_venues,
     update_venue,
+    update_venue_image,
 )
 
 router = APIRouter(prefix="/venues", tags=["venues"])
@@ -46,6 +48,26 @@ async def create(
         return await create_venue(session, actor_id=current_user.id, **data.model_dump())
     except ValueError as error:
         raise HTTPException(status_code=409, detail=str(error)) from error
+
+
+@router.post("/{venue_id}/image", response_model=dict[str, str])
+async def upload_venue_image(
+    venue_id: UUID,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(require_venue_admin)],
+    file: UploadFile = File(...),
+) -> dict[str, str]:
+    settings = get_settings()
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+    contents = await file.read()
+    if len(contents) > settings.max_upload_bytes:
+        raise HTTPException(status_code=413, detail="Image file is too large")
+    venue = await get_venue(session, venue_id)
+    if venue is None:
+        raise HTTPException(status_code=404, detail="Venue not found")
+    image_url = await update_venue_image(session, venue, contents, file.filename or "image", actor_id=current_user.id)
+    return {"image_url": image_url}
 
 
 @router.get("", response_model=list[VenueResponse])

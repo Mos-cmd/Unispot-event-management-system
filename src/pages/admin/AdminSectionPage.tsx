@@ -4,7 +4,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { adminSectionData, type AdminField, type AdminRow, type AdminSectionId } from '../../data/adminMock';
 import { AdminFeedback, AdminPageHeader, AdminPanel, AdminStatus } from './shared';
 import { AdminSpecialSection, AdminUsersSection } from './AdminSpecialSections';
-import { createVenue, listFacilities, listVenues, updateVenue } from '../../api/venues';
+import { createVenue, listFacilities, listVenues, updateVenue, uploadVenueImage } from '../../api/venues';
 import type { ApiVenue } from '../../api/types';
 import { ApiError } from '../../api/client';
 
@@ -33,6 +33,8 @@ export function AdminSectionPage() {
   const [editingId, setEditingId] = useState('');
   const [formValues, setFormValues] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   useEffect(() => {
     setFilter('');
@@ -79,6 +81,23 @@ export function AdminSectionPage() {
     setFormValues(Object.fromEntries(definition.fields.map((field) => [field.key, row[field.key] ?? ''])));
     setFormOpen(true);
     setNotice('');
+    if (row.image_url) setImagePreview(row.image_url);
+    else setImagePreview(null);
+  };
+
+  const handleImageUpload = async (file: File) => {
+    if (!editingId) return;
+    setUploadingImage(true);
+    try {
+      const imageUrl = await uploadVenueImage(editingId, file);
+      setFormValues((prev) => ({ ...prev, image_url: imageUrl }));
+      setImagePreview(imageUrl);
+      setNotice('Venue image uploaded.');
+    } catch (err) {
+      setNotice(err instanceof ApiError ? err.message : 'Image upload failed.');
+    } finally {
+      setUploadingImage(false);
+    }
   };
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -127,6 +146,18 @@ export function AdminSectionPage() {
 
       <AdminPanel title={`${definition.title} records`} action={<label className="admin-table-search"><Search size={15} aria-hidden="true" /><span className="sr-only">Filter {definition.title}</span><input value={filter} onChange={(event) => setFilter(event.target.value)} placeholder="Filter records…" /></label>}>
         {formOpen && <RecordForm fields={definition.fields} values={formValues} onChange={setFormValues} onSubmit={submit} onCancel={() => { setFormOpen(false); setEditingId(''); }} editing={Boolean(editingId)} />}
+        {section === 'venues' && formOpen && (
+          <AdminPanel title="Venue image" className="admin-image-panel">
+            <label className="admin-field">
+              <span>Upload image</span>
+              <input type="file" accept="image/*" onChange={(event) => { const f = event.target.files?.[0]; if (f) { void handleImageUpload(f); } }} disabled={uploadingImage} />
+            </label>
+            {imagePreview && (
+              <div className="admin-image-preview"><img src={imagePreview} alt="Venue preview" loading="lazy" /></div>
+            )}
+            {uploadingImage && <p className="muted">Uploading image…</p>}
+          </AdminPanel>
+        )}
         {notice && <AdminFeedback tone="success">{notice}</AdminFeedback>}
         {loading && <p className="admin-empty-state">Loading…</p>}
         {!loading && (
