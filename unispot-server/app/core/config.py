@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     rate_limit_assistant: int = Field(default=20, ge=1, le=10000)
     assistant_timeout_seconds: int = Field(default=20, ge=1, le=120)
     gemini_api_key: SecretStr | None = Field(default=None, validation_alias="GEMINI_API_KEY")
-    gemini_model: str = Field(default="gemini-2.5-flash", validation_alias="GEMINI_MODEL")
+    gemini_model: str = Field(default="gemini-3.8-flash", validation_alias="GEMINI_MODEL")
     worker_interval_seconds: int = Field(default=30, ge=1, le=3600)
 
     # Venue image uploads
