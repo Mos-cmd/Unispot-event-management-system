@@ -8,8 +8,15 @@ export function homeForRoles(roles: string[] = []) {
   return '/student/dashboard';
 }
 
-export function hasActiveOrganizerMembership(user: { organizations?: Array<{ membership_role?: string }> } | null | undefined) {
-  return Boolean(user?.organizations?.some((organization) => organization.membership_role === 'ORGANIZER'));
+export function hasActiveOrganizerMembership(
+  user: { organizations?: Array<{ membership_role?: string; membership_status?: string }> } | null | undefined,
+) {
+  return Boolean(
+    user?.organizations?.some(
+      (organization) =>
+        organization.membership_role === 'ORGANIZER' && organization.membership_status === 'ACTIVE',
+    ),
+  );
 }
 
 import { getAccessToken, getRefreshToken } from '../auth/storage';
@@ -55,7 +62,7 @@ export function RequireRole({ roles, children }: { roles: string[]; children?: R
     if (hasStoredSession() && authCheckError) return <SessionCheckProblem />;
     return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}`, authRequired: true }} />;
   }
-  if (!roles.some((role) => user.roles.includes(role))) {
+  if (!roles.some((role) => user.roles.includes(role as never))) {
     return <Navigate to="/access-denied" replace state={{ from: `${location.pathname}${location.search}` }} />;
   }
   return children ? <>{children}</> : <Outlet />;
@@ -71,7 +78,7 @@ export function RequireOrganizer({ children }: { children?: React.ReactNode }) {
   }
   const canAccessServicePlatform =
     hasActiveOrganizerMembership(user) ||
-    user.roles.some((role) => ['SYSTEM_ADMIN', 'SERVICE_PROVIDER'].includes(role));
+    (user.roles as string[]).some((role) => ['SYSTEM_ADMIN', 'SERVICE_PROVIDER'].includes(role));
   if (!canAccessServicePlatform) return <Navigate to="/access-denied" replace state={{ from: `${location.pathname}${location.search}` }} />;
   return children ? <>{children}</> : <Outlet />;
 }

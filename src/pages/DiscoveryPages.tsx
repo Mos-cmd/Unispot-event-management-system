@@ -11,14 +11,14 @@ function errMsg(error: unknown) { return error instanceof ApiError ? error.messa
 function shortDate(iso: string) { const d = new Date(iso); return `${d.toLocaleString(undefined, { day: '2-digit' })} ${d.toLocaleString(undefined, { month: 'short' }).toUpperCase()}`; }
 function longDate(iso: string) { return new Date(iso).toLocaleDateString(undefined, { dateStyle: 'long' }); }
 function timeRange(start: string, end: string) { const s = new Date(start).toLocaleTimeString(undefined, { timeStyle: 'short' }); const e = new Date(end).toLocaleTimeString(undefined, { timeStyle: 'short' }); return `${s} – ${e}`; }
-const EVENT_IMAGES = ['/assets/event-innovation.jpg', '/assets/event-culture.jpg', '/assets/event-leadership.jpg'];
+const EVENT_IMAGES = ['/assets/event-innovation.webp', '/assets/event-culture.webp', '/assets/event-leadership.webp'];
 function eventImage(id: string) { let h = 0; for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0; return EVENT_IMAGES[h % EVENT_IMAGES.length]; }
 
 function EventCard({ event, compact = false }: { event: ApiCampusEvent; compact?: boolean }) {
   return (
     <article className={`event-card${compact ? ' event-card--compact' : ''}`}>
       <Link to={`/events/${event.id}`} className="event-card-image-link" aria-label={`View ${event.title}`}>
-        <img className="event-card-image" src={eventImage(event.id)} alt={event.title} loading="lazy" />
+        <img className="event-card-image" src={eventImage(event.id)} srcSet={`${eventImage(event.id)} 400w, ${eventImage(event.id)} 800w`} sizes="(max-width: 768px) 100vw, 50vw" alt={event.title} loading="lazy" decoding="async" />
         <span className="date-tile"><strong>{shortDate(event.starts_at).split(' ')[0]}</strong><small>{shortDate(event.starts_at).split(' ')[1]}</small></span>
       </Link>
       <div className="event-card-body">
@@ -36,14 +36,14 @@ function EventCard({ event, compact = false }: { event: ApiCampusEvent; compact?
 }
 
 const HERO_SLIDES = [
-  '/assets/hero-campus.jpg',
-  '/assets/campus-courtyard.jpg',
-  '/assets/campus-halls.jpg',
-  '/assets/campus-graduation.jpg',
-  '/assets/campus-clubs.jpg',
-  '/assets/venue-outdoor.jpg',
-  '/assets/venue-seminar.jpg',
-  '/assets/campus-admin.jpg',
+  '/assets/hero-campus.webp',
+  '/assets/campus-courtyard.webp',
+  '/assets/campus-halls.webp',
+  '/assets/campus-graduation.webp',
+  '/assets/campus-clubs.webp',
+  '/assets/venue-outdoor.webp',
+  '/assets/venue-seminar.webp',
+  '/assets/campus-admin.webp',
 ];
 
 export function HomePage() {

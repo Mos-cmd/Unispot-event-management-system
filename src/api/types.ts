@@ -7,7 +7,15 @@ export type PaymentStatus = 'NOT_REQUIRED' | 'PENDING' | 'PAID' | 'FAILED' | 'RE
 
 export type ApiVenue = { id: string; name: string; kind?: string; venue_type?: string; description: string | null; building: string | null; location: string; image_url: string | null; capacity: number; hourly_rate_kes: string; minimum_booking_minutes: number; advance_notice_hours: number; requires_approval: boolean; status: 'ACTIVE' | 'INACTIVE'; facilities?: string[]; };
 export type ApiOrganization = { id: string; name: string; slug: string; organization_type: 'CLUB' | 'DEPARTMENT' | 'EXTERNAL'; status: OrganizationStatus; };
-export type ApiOrganizationMembership = { organization_id: string; organization_name: string; organization_status: OrganizationStatus; role: string; membership_status: string; };
+export type ApiOrganizationMembership = {
+  id?: string;
+  organization_id: string;
+  name: string;
+  slug?: string;
+  membership_role: string;
+  organization_status?: OrganizationStatus;
+  membership_status?: string;
+};
 
 export type ApiUser = { id: string; email: string; full_name: string; phone_number: string | null; status: UserStatus; email_verified_at?: string | null; created_at: string; updated_at: string; roles: RoleName[]; organizations: ApiOrganizationMembership[]; };
 export type AuthResponse = { access_token: string; refresh_token: string; token_type: 'bearer'; user: ApiUser; };
@@ -53,8 +61,8 @@ export type EventStatus = 'PUBLISHED' | 'CANCELLED';
 export type EventRegistrationStatus = 'CONFIRMED' | 'CANCELLED';
 export type ApiCampusEvent = { id: string; title: string; slug: string; description: string | null; category: string | null; organizer: string | null; starts_at: string; ends_at: string; venue_id?: string | null; venue_name?: string | null; location: string | null; capacity: number; expected_attendance?: number | null; requires_registration: boolean; reservation_id?: string | null; status: EventStatus; created_by_user_id?: string | null; confirmed_registrations: number; available_capacity: number; created_at: string; };
 export type CreateCampusEventInput = { title: string; description?: string; category?: string; organizer?: string; organization_id?: string; starts_at: string; ends_at: string; venue_id?: string; location?: string; capacity?: number; expected_attendance?: number; requires_registration?: boolean; status?: EventStatus; };
-export type CreateEventRegistrationInput = { event_id: string; full_name: string; email: string; role_label?: string; accessibility_needs?: string; };
-export type ApiEventRegistration = { id: string; event_id: string; event_title: string; user_id: string | null; full_name: string; email: string; role_label: string | null; accessibility_needs: string | null; status: EventRegistrationStatus; confirmation_code: string; checked_in_at: string | null; created_at: string; cancelled_at: string | null; };
+export type CreateEventRegistrationInput = { event_id: string; full_name: string; email: string; phone: string; student_id?: string | null; };
+export type ApiEventRegistration = { id: string; event_id: string; event_title: string; user_id: string | null; full_name: string; email: string; phone: string; student_id: string | null; status: EventRegistrationStatus; confirmation_code: string; checked_in_at: string | null; created_at: string; cancelled_at: string | null; };
 export type ApiEventAttendance = { event_id: string; event_title: string; confirmed_registrations: number; checked_in_registrations: number; };
 
 export type ApiAuditEvent = { id: number; actor_user_id: string | null; actor_type: string; action: string; target_type: string; target_id: string | null; request_id: string; outcome: string; metadata: Record<string, unknown>; created_at: string; };
@@ -82,10 +90,10 @@ export type ApiCertificate = { id: string; registration_id: string; event_id: st
 export type ApiCertificateVerification = { valid: boolean; verification_code: string; certificate?: ApiCertificate | null; message: string; recipient_name?: string; event_title?: string; };
 
 // Compatibility aliases used across the app
-export type TokenResponse = AuthResponse;
+export type TokenResponse = { access_token: string; refresh_token: string; token_type: string; user?: ApiUser | null };
 export type AuthCredentials = LoginRequest;
 export type CurrentUser = ApiUser;
-export type RegisterResponse = { user: ApiUser; message?: string } | ApiUser;
+export type RegisterResponse = { message?: string; email?: string; requires_email_verification?: boolean };
 export type RegistrationDetails = RegisterRequest;
 export type MessageResponse = { message: string; detail?: string };
 export type ApiErrorPayload = { error?: { message?: string; code?: string; details?: Array<Record<string, unknown>>; request_id?: string }; detail?: string; message?: string };

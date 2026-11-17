@@ -1,8 +1,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.routes.admin_allocations import router as admin_allocations_router
 from app.api.routes.admin_analytics import router as admin_analytics_router
@@ -88,6 +90,9 @@ def create_application(settings: Settings | None = None) -> FastAPI:
     application.include_router(notifications_router)
     application.include_router(audit_router)
     application.include_router(assistant_router)
+    settings = get_settings()
+    os.makedirs(settings.upload_dir, exist_ok=True)
+    application.mount(settings.upload_base_url, StaticFiles(directory=settings.upload_dir), name="uploads")
     return application
 
 

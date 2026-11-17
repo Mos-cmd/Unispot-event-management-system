@@ -28,7 +28,7 @@ function PasswordInput(props: Omit<InputHTMLAttributes<HTMLInputElement>, 'type'
 }
 
 function AuthFrame({ title, subtitle, children, footer, notice }: { title: string; subtitle: string; children: ReactNode; footer: ReactNode; notice?: ReactNode }) {
-  const bgImage = title === 'Welcome back' ? '/assets/auth-login.jpg' : '/assets/auth-signup.jpg';
+  const bgImage = title === 'Welcome back' ? '/assets/auth-login.webp' : '/assets/auth-signup.webp';
   return (
     <main className="auth-screen">
       <aside className="auth-story">

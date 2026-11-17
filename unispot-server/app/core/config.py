@@ -51,6 +51,11 @@ class Settings(BaseSettings):
     assistant_timeout_seconds: int = Field(default=20, ge=1, le=120)
     worker_interval_seconds: int = Field(default=30, ge=1, le=3600)
 
+    # Venue image uploads
+    upload_dir: str = Field(default="uploads", validation_alias="UPLOAD_DIR")
+    upload_base_url: str = Field(default="/uploads", validation_alias="UPLOAD_BASE_URL")
+    max_upload_bytes: int = Field(default=10485760, ge=1024, le=52428800, validation_alias="MAX_UPLOAD_BYTES")
+
     # Email (Resend). When unset, auth emails are logged locally in development.
     resend_api_key: SecretStr | None = Field(default=None, validation_alias="RESEND_API_KEY")
     email_from: str = Field(default="UniSpot <onboarding@resend.dev>", validation_alias="EMAIL_FROM")

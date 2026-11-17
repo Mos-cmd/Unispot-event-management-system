@@ -18,7 +18,7 @@ export function ServiceWorkspace({ children }: ServiceWorkspaceProps) {
   const { user } = useAuth();
   const roles = user?.roles || [];
   const isStudentOnly = (roles.includes('STUDENT') || roles.includes('UNIVERSITY_STAFF')) && !roles.some((r) => ['ORGANIZER', 'VENUE_ADMIN', 'SERVICE_PROVIDER', 'SYSTEM_ADMIN'].includes(r));
-  const canAccessServicePlatform = hasActiveOrganizerMembership(user) || roles.some((r) => ['SYSTEM_ADMIN', 'SERVICE_PROVIDER'].includes(r));
+  const canAccessServicePlatform = hasActiveOrganizerMembership(user) || (roles as string[]).some((r) => ['SYSTEM_ADMIN', 'SERVICE_PROVIDER'].includes(r));
   const profileLink = homeForRoles(roles);
   const displayName = user?.full_name || 'UniSpot user';
   const displayRole = roles[0]?.replace(/_/g, ' ') || 'User';

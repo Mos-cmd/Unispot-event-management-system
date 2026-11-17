@@ -31,7 +31,7 @@ export function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [messages, setMessages] = useState<Message[]>([
-    { from: 'assistant', text: "Hi! I'm the UniSpot Assistant. How can I help you?" },
+    { from: 'assistant', text: "Hi! I'm the UniSpot Assistant. Ask me about the site, events, venues, services, bookings, or your dashboard." },
   ]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [pendingConfirmation, setPendingConfirmation] = useState<PendingConfirmation | null>(null);
@@ -119,14 +119,14 @@ export function ChatWidget() {
       {!open && <button ref={launcherRef} className="chat-launcher" type="button" aria-label="Open UniSpot Assistant" onClick={() => setOpen(true)}><Bot size={23} /><span>Ask UniSpot</span></button>}
       {open && (
         <section className="chat-panel" role="region" aria-labelledby="assistant-title">
-          <header className="chat-header"><span className="chat-avatar"><Bot size={20} /></span><div><strong id="assistant-title">UniSpot Assistant</strong><small>Venue search and booking help</small></div><button className="chat-window-action" type="button" aria-label="Minimize chat" onClick={closeChat}><Minus size={17} /></button><button className="chat-window-action" type="button" aria-label="Close chat" onClick={closeChat}><X size={17} /></button></header>
+          <header className="chat-header"><span className="chat-avatar"><Bot size={20} /></span><div><strong id="assistant-title">UniSpot Assistant</strong><small>Ask about the site, events, venues, or bookings</small></div><button className="chat-window-action" type="button" aria-label="Minimize chat" onClick={closeChat}><Minus size={17} /></button><button className="chat-window-action" type="button" aria-label="Close chat" onClick={closeChat}><X size={17} /></button></header>
           <div className="chat-messages" aria-live="polite" aria-relevant="additions">
             {messages.map((message, index) => <div className={`chat-message chat-message--${message.from}`} key={`${message.from}-${index}`}>{message.text}</div>)}
             {pendingConfirmation && <div className="chat-quick-actions"><button type="button" className="button button--primary button--small" onClick={() => void confirmPendingAction()} disabled={isSending}>{isSending ? 'Confirming…' : 'Confirm action'}</button><button type="button" className="button button--soft button--small" onClick={changePendingAction} disabled={isSending}>Change request</button></div>}
             {isSending && <p className="form-status">Assistant is thinking…</p>}
             {error && <p className="form-error" role="alert">{error}</p>}
           </div>
-          <form className="chat-compose" onSubmit={sendMessage}><label className="sr-only" htmlFor="chat-message">Type a message</label><input ref={messageInputRef} id="chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ask about venues or bookings…" disabled={isSending} /><button className="chat-send" type="submit" aria-label="Send message" disabled={isSending}><Send size={17} /></button></form>
+          <form className="chat-compose" onSubmit={sendMessage}><label className="sr-only" htmlFor="chat-message">Type a message</label><input ref={messageInputRef} id="chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Ask about the site, events, venues, or bookings…" disabled={isSending} /><button className="chat-send" type="submit" aria-label="Send message" disabled={isSending}><Send size={17} /></button></form>
         </section>
       )}
     </>
