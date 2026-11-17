@@ -72,7 +72,8 @@ export function EventRegistrationPage() {
         event_id: selected.id,
         full_name: String(form.get('fullName') || ''),
         email: String(form.get('email') || ''),
-        
+        phone: String(form.get('phone') || ''),
+        student_id: String(form.get('studentId') || '') || undefined,
       });
       setNotice({ tone: 'success', text: `Registration confirmed for ${registration.event_title}. Confirmation code: ${registration.confirmation_code}.` });
       (event.currentTarget as HTMLFormElement).reset();

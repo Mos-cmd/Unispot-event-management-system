@@ -4,7 +4,7 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import { SiteLayout } from './components/SiteLayout';
 import { LoginPage, SignupPage, ForgotPasswordPage, ResetPasswordPage, VerifyEmailPage } from './pages/AuthPages';
 import { AccessDeniedPage } from './pages/AccessDeniedPage';
-import { RequireAuth, RequireOrganizer, RequireRole } from './components/ProtectedRoute';
+import { RequireAuth, RequireRole } from './components/ProtectedRoute';
 
 const HomePage = lazy(() => import('./pages/DiscoveryPages').then((m) => ({ default: m.HomePage })));
 const EventsPage = lazy(() => import('./pages/DiscoveryPages').then((m) => ({ default: m.EventsPage })));
@@ -39,10 +39,8 @@ export default function App() {
             <Route path="venues" element={<VenueListPage />} />
             <Route path="venues/:id" element={<VenueDetailsPage />} />
             <Route path="organizations" element={<OrganizationsPage />} />
-            <Route element={<RequireOrganizer />}>
-              <Route path="services" element={<ServicesPage />} />
-            </Route>
             <Route element={<RequireAuth redirectTo="/signup" />}>
+              <Route path="services" element={<ServicesPage />} />
               <Route path="booking/new" element={<RequireRole roles={['ORGANIZER', 'VENUE_ADMIN']}><BookingPage /></RequireRole>} />
               <Route path="student/dashboard" element={<RequireRole roles={['STUDENT', 'UNIVERSITY_STAFF']}><StudentDashboardPage /></RequireRole>} />
               <Route path="my-waitlists" element={<MyWaitlistsPage />} />
@@ -54,7 +52,7 @@ export default function App() {
           <Route element={<RequireAuth redirectTo="/signup" />}>
             <Route path="provider/dashboard" element={<RequireRole roles={['SERVICE_PROVIDER']}><ProviderDashboardPage /></RequireRole>} />
             <Route path="provider/requests" element={<RequireRole roles={['SERVICE_PROVIDER']}><ProviderDashboardPage /></RequireRole>} />
-            <Route element={<RequireOrganizer />}>
+            <Route element={<RequireAuth redirectTo="/signup" />}>
               <Route path="services/:serviceId" element={<ServiceDetailRoute />} />
             </Route>
           </Route>

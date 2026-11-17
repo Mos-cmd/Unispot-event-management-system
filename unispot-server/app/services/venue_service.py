@@ -1,4 +1,6 @@
+import os
 import re
+import uuid
 from datetime import datetime
 from uuid import UUID
 
@@ -7,6 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.core.config import get_settings
 from app.models.audit_event import ActorType, AuditEvent, AuditOutcome
 from app.models.booking import BookingSource
 from app.models.facility import Facility, VenueFacility
@@ -112,6 +115,43 @@ async def update_venue(
         await session.rollback()
         raise ValueError("Venue name or code already exists") from error
     return (await get_venue(session, venue.id)) or venue
+
+
+async def update_venue_image(
+    session: AsyncSession,
+    venue: Venue,
+    contents: bytes,
+    filename: str,
+    *,
+    actor_id: UUID | None = None,
+) -> str:
+    settings = get_settings()
+    upload_dir = settings.upload_dir
+    os.makedirs(upload_dir, exist_ok=True)
+    ext = os.path.splitext(filename)[1].lower() or ".jpg"
+    if ext not in {".jpg", ".jpeg", ".png", ".gif", ".webp"}:
+        ext = ".jpg"
+    object_name = f"{uuid.uuid4().hex}{ext}"
+    file_path = os.path.join(upload_dir, object_name)
+    with open(file_path, "wb") as f:
+        f.write(contents)
+    base_url = settings.upload_base_url.rstrip("/")
+    image_url = f"{base_url}/{object_name}"
+    venue.image_url = image_url
+    venue.updated_at = datetime.now().astimezone()
+    session.add(
+        AuditEvent(
+            actor_user_id=actor_id,
+            actor_type=ActorType.USER if actor_id else ActorType.SYSTEM,
+            action="VENUE_IMAGE_UPLOADED",
+            target_type="VENUE",
+            target_id=venue.id,
+            channel=BookingSource.WEB,
+            outcome=AuditOutcome.SUCCEEDED,
+        )
+    )
+    await session.commit()
+    return image_url
 
 
 async def create_facility(

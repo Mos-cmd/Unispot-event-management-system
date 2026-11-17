@@ -40,7 +40,7 @@ export type AdminSectionId =
 export type AdminField = {
   key: string;
   label: string;
-  type: 'text' | 'email' | 'number' | 'date' | 'select';
+  type: 'text' | 'email' | 'number' | 'date' | 'url' | 'select';
   required?: boolean;
   options?: string[];
 };
@@ -107,13 +107,14 @@ export const adminSectionData: Record<AdminSectionId, AdminSectionDefinition> = 
   venues: {
     id: 'venues', title: 'Venue Management', description: 'Maintain venue capacity, facilities, availability, and service status.',
     columns: [{ key: 'name', label: 'Venue' }, { key: 'capacity', label: 'Capacity' }, { key: 'location', label: 'Location' }, { key: 'facilities', label: 'Facilities' }, { key: 'status', label: 'Status' }],
-    fields: [field('name', 'Venue name'), field('capacity', 'Capacity', 'number'), field('location', 'Location'), field('facilities', 'Facilities'), field('status', 'Status', 'select', true, ['Active', 'Maintenance', 'Unavailable'])],
+    fields: [field('name', 'Venue name'), field('image_url', 'Image URL', 'url'), field('capacity', 'Capacity', 'number'), field('location', 'Location'), field('facilities', 'Facilities'), field('status', 'Status', 'select', true, ['Active', 'Maintenance', 'Unavailable'])],
     rows: [
-      { id: 'venue-1', name: 'Great Hall', capacity: '500', location: 'Main Campus', facilities: 'Projector, Sound System, Wi-Fi', status: 'Active' },
-      { id: 'venue-2', name: 'Seminar Room A', capacity: '80', location: 'North Wing', facilities: 'Display, Wi-Fi', status: 'Active' },
-      { id: 'venue-3', name: 'Seminar Room B', capacity: '100', location: 'Main Campus', facilities: 'Projector, Whiteboard', status: 'Active' },
-      { id: 'venue-4', name: 'Auditorium', capacity: '300', location: 'Arts Block', facilities: 'Stage, Sound System', status: 'Maintenance' },
-      { id: 'venue-5', name: 'Conference Room', capacity: '60', location: 'Admin Block', facilities: 'Video Conferencing', status: 'Active' },
+      { id: 'venue-1', name: 'Amphitheatre', capacity: '500', location: 'Main Campus', facilities: 'Projector, Sound System, Wi-Fi', status: 'Active', image_url: '/assets/venue-great-hall.jpg' },
+      { id: 'venue-2', name: 'Seminar Room A', capacity: '80', location: 'North Wing', facilities: 'Display, Wi-Fi', status: 'Active', image_url: '/assets/venue-seminar.jpg' },
+      { id: 'venue-3', name: 'Seminar Room B', capacity: '100', location: 'Main Campus', facilities: 'Projector, Whiteboard', status: 'Active', image_url: '/assets/venue-seminar.jpg' },
+      { id: 'venue-4', name: 'Auditorium', capacity: '300', location: 'Arts Block', facilities: 'Stage, Sound System', status: 'Maintenance', image_url: '' },
+      { id: 'venue-5', name: 'Conference Room', capacity: '60', location: 'Admin Block', facilities: 'Video Conferencing', status: 'Active', image_url: '' },
+      { id: 'venue-6', name: 'Outdoor Courtyard', capacity: '200', location: 'Campus Grounds', facilities: 'Open-air, Wi-Fi', status: 'Active', image_url: '/assets/venue-outdoor.jpg' },
     ],
   },
   allocations: {

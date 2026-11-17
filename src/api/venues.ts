@@ -53,3 +53,13 @@ export async function updateVenue(venueId: string, payload: Record<string, unkno
   const { data } = await apiFetch<ApiVenue>(`/venues/${venueId}`, { method: 'PATCH', body: payload });
   return data;
 }
+
+export async function uploadVenueImage(venueId: string, file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+  const { data } = await apiFetch<{ image_url: string }>(`/venues/${venueId}/image`, {
+    method: 'POST',
+    body: formData,
+  });
+  return data.image_url;
+}

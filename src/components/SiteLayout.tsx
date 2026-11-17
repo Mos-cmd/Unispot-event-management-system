@@ -6,9 +6,9 @@ import { ChatWidget } from './ChatWidget';
 import { useAuth } from '../auth/AuthProvider';
 import { listMyNotifications } from '../api/notifications';
 
-import { hasActiveOrganizerMembership, homeForRoles } from './ProtectedRoute';
+import { homeForRoles } from './ProtectedRoute';
 
-function getPrimaryLinks(roles: string[] = [], canAccessServicePlatform = false) {
+function getPrimaryLinks(roles: string[] = []) {
   const set = new Set(roles);
   if (set.has('SERVICE_PROVIDER')) {
     return [
@@ -24,7 +24,7 @@ function getPrimaryLinks(roles: string[] = [], canAccessServicePlatform = false)
       { to: '/events', label: 'Events' },
       { to: '/venues', label: 'Venues' },
       { to: '/organizations', label: 'Organizations' },
-      ...(canAccessServicePlatform ? [{ to: '/services', label: 'Services' }] : []),
+      { to: '/services', label: 'Services' },
       { to: '/organizer/dashboard', label: 'Dashboard' },
     ];
   }
@@ -34,14 +34,16 @@ function getPrimaryLinks(roles: string[] = [], canAccessServicePlatform = false)
       { to: '/events', label: 'Events' },
       { to: '/venues', label: 'Venues' },
       { to: '/organizations', label: 'Organizations' },
+      { to: '/services', label: 'Services' },
       { to: '/student/dashboard', label: 'Dashboard' },
     ];
   }
-  // default: STUDENT (no venue booking/services platform in nav)
+  // default: STUDENT
   return [
     { to: '/', label: 'Home', end: true },
     { to: '/events', label: 'Events' },
     { to: '/organizations', label: 'Organizations' },
+    { to: '/services', label: 'Services' },
     { to: '/student/dashboard', label: 'My Dashboard' },
   ];
 }
@@ -52,8 +54,7 @@ export function SiteLayout() {
   const [unreadCount, setUnreadCount] = useState(0);
   const initials = user?.full_name?.split(' ').map((part: any) => part[0]).slice(0, 2).join('').toUpperCase() || 'U';
   const roles = user?.roles || [];
-  const canAccessServicePlatform = hasActiveOrganizerMembership(user) || roles.includes('SYSTEM_ADMIN') || roles.includes('SERVICE_PROVIDER');
-  const primaryLinks = getPrimaryLinks(roles, canAccessServicePlatform);
+  const primaryLinks = getPrimaryLinks(roles);
   const profileLink = homeForRoles(roles);
 
   const refreshUnreadCount = useCallback(async () => {

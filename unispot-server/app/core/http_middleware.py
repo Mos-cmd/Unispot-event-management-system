@@ -70,7 +70,8 @@ class HttpMiddleware:
                     if message["type"] == "http.disconnect":
                         return
                     body.extend(message.get("body", b""))
-                    if len(body) > self.settings.max_request_body_bytes:
+                    limit = self.settings.max_upload_bytes if scope["path"].startswith("/venues/") and scope["path"].endswith("/image") else self.settings.max_request_body_bytes
+                    if len(body) > limit:
                         await error_response(413, "payload_too_large", "Request body is too large")(
                             scope,
                             receive,

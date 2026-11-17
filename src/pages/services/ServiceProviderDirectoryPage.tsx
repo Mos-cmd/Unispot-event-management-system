@@ -5,7 +5,7 @@ import { ApiError } from '../../api/client';
 import type { ApiServiceProvider, ApiServiceRequest } from '../../api/types';
 import { StatusMessage, ServicePageHeading, WorkspacePanel } from './shared';
 
-type PriceRange = 'Any Price' | 'Under KSh 10,000' | 'KSh 10,000â€“25,000' | 'Over KSh 25,000';
+type PriceRange = 'Any Price' | 'Under KSh 10,000' | 'KSh 10,000–25,000' | 'Over KSh 25,000';
 const categories = ['All Categories', 'Catering', 'Photography & Videography', 'Sound Systems', 'Decorations'];
 function apiMessage(error: unknown) { return error instanceof ApiError ? error.message : 'The request could not be completed. Please try again.'; }
 function fmtDate(value: string) { return new Date(value).toLocaleString(undefined, { dateStyle: 'medium' }); }
@@ -38,7 +38,7 @@ export function ServiceProviderDirectoryPage() {
     const textMatches = `${provider.name} ${provider.category} ${provider.description || ''}`.toLowerCase().includes(search.toLowerCase());
     const categoryMatches = category === 'All Categories' || provider.category === category;
     const price = provider.price_from_kes;
-    const priceMatches = priceRange === 'Any Price' || (priceRange === 'Under KSh 10,000' && price < 10000) || (priceRange === 'KSh 10,000â€“25,000' && price >= 10000 && price <= 25000) || (priceRange === 'Over KSh 25,000' && price > 25000);
+    const priceMatches = priceRange === 'Any Price' || (priceRange === 'Under KSh 10,000' && price < 10000) || (priceRange === 'KSh 10,000–25,000' && price >= 10000 && price <= 25000) || (priceRange === 'Over KSh 25,000' && price > 25000);
     const availabilityMatches = availability === 'Any Date' || (availability === 'Available Today' && provider.availability === 'today') || (availability === 'Available This Week' && provider.availability === 'week');
     return textMatches && categoryMatches && priceMatches && availabilityMatches;
   }), [providers, search, category, priceRange, availability]);
@@ -83,7 +83,7 @@ export function ServiceProviderDirectoryPage() {
         <div className="sd-provider-filters">
           <label className="sd-field sd-provider-search"><span>Search providers</span><span className="sd-input-with-icon"><Search size={15} aria-hidden="true" /><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search catering, photography, sound..." /></span></label>
           <label className="sd-field"><span>Category</span><select value={category} onChange={(event) => setCategory(event.target.value)}>{categories.map((value) => <option key={value}>{value}</option>)}</select></label>
-          <label className="sd-field"><span>Price Range</span><select value={priceRange} onChange={(event) => setPriceRange(event.target.value as PriceRange)}><option>Any Price</option><option>Under KSh 10,000</option><option>KSh 10,000â€“25,000</option><option>Over KSh 25,000</option></select></label>
+          <label className="sd-field"><span>Price Range</span><select value={priceRange} onChange={(event) => setPriceRange(event.target.value as PriceRange)}><option>Any Price</option><option>Under KSh 10,000</option><option>KSh 10,000–25,000</option><option>Over KSh 25,000</option></select></label>
           <label className="sd-field"><span>Availability</span><select value={availability} onChange={(event) => setAvailability(event.target.value)}><option>Any Date</option><option>Available Today</option><option>Available This Week</option></select></label>
         </div>
         <div className="sd-provider-result-count" aria-live="polite">{visibleProviders.length} providers match your filters</div>
@@ -92,7 +92,7 @@ export function ServiceProviderDirectoryPage() {
       <div className="sd-provider-grid">
         {visibleProviders.map((provider) => (
           <article className="sd-provider-card" key={provider.id}>
-            <div className="sd-provider-photo"><img src={provider.image_url || '/assets/event-culture.jpg'} alt={`${provider.name} listing`} /><span>{provider.category}</span></div>
+            <div className="sd-provider-photo"><img src={provider.image_url || '/assets/event-culture.webp'} alt={`${provider.name} listing`} loading="lazy" decoding="async" /><span>{provider.category}</span></div>
             <div className="sd-provider-card-body"><div className="sd-provider-title-row"><h2>{provider.name}</h2><span className="sd-provider-approved" aria-label="Active listing"><Check size={13} /></span></div>
               <p className="sd-provider-category">{provider.category}</p><div className="sd-provider-rating"><Star size={14} fill="currentColor" aria-hidden="true" /><strong>{provider.rating}</strong><span>({provider.reviews} reviews)</span></div>
               <div className="sd-provider-meta"><span><MapPin size={14} aria-hidden="true" />{provider.location}</span><strong>From KSh {provider.price_from_kes.toLocaleString()}</strong></div>

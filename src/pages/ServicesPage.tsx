@@ -4,7 +4,7 @@ import { Brand } from '../components/Brand';
 import { useAuth } from '../auth/AuthProvider';
 import { serviceItems, type PreviewKind } from '../data/services';
 
-const STUDENT_HIDDEN_SERVICE_IDS = new Set(['service-provider-directory']);
+const STUDENT_HIDDEN_SERVICE_IDS = new Set(['event-registration-rsvp', 'service-provider-directory', 'equipment-reservations']);
 
 function ServicePreview({ kind }: { kind: PreviewKind }) {
   if (kind === 'registration') return <div className="preview-registration"><strong>Register for Event</strong><span>Full name</span><span>Email address</span><em>Register</em></div>;
@@ -15,7 +15,8 @@ function ServicePreview({ kind }: { kind: PreviewKind }) {
 }
 
 export function ServicesPage() {
-  const heroImage = '/assets/hero-campus.jpg';
+  const heroImage = '/assets/hero-campus.webp';
+  const heroSrcSet = '/assets/hero-campus.webp 640w, /assets/hero-campus.webp 1024w, /assets/hero-campus.webp 1600w';
   const { user } = useAuth();
   const roles = user?.roles || [];
   const isStudentOnly = (roles.includes('STUDENT') || roles.includes('UNIVERSITY_STAFF')) && !roles.some((r: string) => ['ORGANIZER', 'VENUE_ADMIN', 'SERVICE_PROVIDER', 'SYSTEM_ADMIN'].includes(r));
@@ -23,7 +24,7 @@ export function ServicesPage() {
   return (
     <div className="services-experience">
       <section className="services-hero" aria-labelledby="services-hero-title">
-        <img className="services-hero-photo" src={heroImage} alt="Students collaborating around a laptop at a campus event" loading="eager" decoding="async" fetchPriority="high" />
+        <img className="services-hero-photo" src={heroImage} srcSet={heroSrcSet} sizes="(max-width: 768px) 100vw, 50vw" alt="Students collaborating around a laptop at a campus event" loading="eager" decoding="async" fetchPriority="high" />
         <div className="services-hero-inner">
           <div className="services-hero-copy">
             <span className="services-kicker"><Sparkles size={14} /> Campus Services</span>
