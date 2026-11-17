@@ -142,13 +142,13 @@ async def validate_booking_policy(
             violations.append(
                 PolicyViolation("maximum_duration", "Bookings cannot exceed twelve hours")
             )
-        violations.extend(await _operating_hours_violations(session, venue, starts_at, ends_at))
+        violations.extend(await operating_hours_violations(session, venue, starts_at, ends_at))
 
     if violations:
         raise BookingPolicyError(violations)
 
 
-async def _operating_hours_violations(
+async def operating_hours_violations(
     session: AsyncSession,
     venue: Venue,
     starts_at: datetime,

@@ -30,9 +30,12 @@ export type CreateBookingInput = { venue_id: string; organization_id: string; ev
 export type ApiBooking = { id: string; user_id?: string | null; organization_id?: string | null; venue_id: string; venue_name: string; reservation_id?: string | null; title?: string; event_name?: string; purpose: string | null; starts_at: string; ends_at: string; expected_attendance: number; status: BookingStatus; source: BookingSource; payment_status?: PaymentStatus; total_amount_kes?: string; confirmation_code: string; cancelled_at: string | null; created_at: string; updated_at?: string; };
 export type ApiPaymentReceipt = { id: string; booking_id: string; mpesa_receipt: string | null; phone_number: string | null; amount_kes: string; status: string; result_desc: string | null; paid_at: string | null; created_at: string; };
 
-export type AssistantToolName = 'search_venues' | 'check_availability' | 'get_booking_policy' | 'create_booking' | 'list_my_bookings' | 'cancel_my_booking';
+export type AssistantToolName = 'search_venues' | 'check_availability' | 'list_my_organizations' | 'get_booking_policy' | 'create_booking' | 'list_my_bookings' | 'cancel_my_booking';
 export type AssistantToolCall = { name: AssistantToolName; arguments?: Record<string, unknown>; };
 export type AssistantToolResult = { name: AssistantToolName; status: 'succeeded' | 'failed' | 'confirmation_required'; data: unknown; error: string | null; booking_id: string | null; };
+export type AssistantVenueOption = { id: string; name: string; code: string; location: string; capacity: number; description: string | null; venue_type?: string; timezone: string; reasons?: string[]; };
+export type AssistantAvailabilityData = { starts_at: string; ends_at: string; available_venues: AssistantVenueOption[]; unavailable_venues?: AssistantVenueOption[]; booking_ready: boolean; messages?: string[]; };
+export type AssistantOrganizationsData = { organizations: { id: string; name: string }[]; };
 export type AssistantPendingConfirmation = { tool: 'create_booking' | 'cancel_my_booking'; arguments: Record<string, unknown>; confirmation_id: string; idempotency_key?: string; completed?: boolean; };
 export type AssistantConversationState = { intent?: string; slots?: Record<string, unknown>; pending_confirmation?: AssistantPendingConfirmation; };
 export type AssistantMessageInput = { conversation_id?: string; message: string; tool_calls?: AssistantToolCall[]; confirmed?: boolean; confirmation_id?: string; };

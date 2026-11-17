@@ -57,6 +57,7 @@ async def list_venues(
     capacity: int | None = None,
     location: str | None = None,
     facility_id: UUID | None = None,
+    query: str | None = None,
     status: VenueStatus | None = None,
     limit: int = 50,
     offset: int = 0,
@@ -66,6 +67,8 @@ async def list_venues(
         conditions.append(Venue.capacity >= capacity)
     if location:
         conditions.append(Venue.location.ilike(f"%{location}%"))
+    if query:
+        conditions.append(Venue.name.ilike(f"%{query}%"))
     if status is not None:
         conditions.append(Venue.status == status)
     statement = (
@@ -421,6 +424,8 @@ async def find_available_venues(
     capacity: int | None = None,
     location: str | None = None,
     facility_id: UUID | None = None,
+    venue_id: UUID | None = None,
+    venue_name: str | None = None,
     limit: int = 50,
     offset: int = 0,
 ) -> list[Venue]:
@@ -436,6 +441,10 @@ async def find_available_venues(
         conditions.append(Venue.capacity >= capacity)
     if location:
         conditions.append(Venue.location.ilike(f"%{location}%"))
+    if venue_id is not None:
+        conditions.append(Venue.id == venue_id)
+    if venue_name:
+        conditions.append(Venue.name.ilike(f"%{venue_name}%"))
     statement = (
         select(Venue)
         .options(selectinload(Venue.facilities).selectinload(VenueFacility.facility))

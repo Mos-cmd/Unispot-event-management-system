@@ -27,7 +27,11 @@ from app.services.assistant_conversation import (
     get_or_create_conversation,
     record_tool_call,
 )
-from app.services.assistant_provider import AssistantProvider, RuleBasedAssistantProvider
+from app.services.assistant_provider import (
+    AssistantProvider,
+    RuleBasedAssistantProvider,
+    build_assistant_provider,
+)
 from app.services.assistant_tools import AssistantConfirmationRequired, AssistantToolExecutor
 from app.services.booking_policy import BookingPolicyError
 
@@ -123,7 +127,7 @@ async def _process_turn(
         await session.commit()
 
     if not invocations:
-        active_provider = provider or RuleBasedAssistantProvider()
+        active_provider = provider or build_assistant_provider()
         try:
             async with asyncio.timeout(get_settings().assistant_timeout_seconds):
                 plan = await active_provider.complete(
@@ -140,10 +144,25 @@ async def _process_turn(
                     **{k: v for k, v in plan.state_patch.items() if k in {"intent", "slots"}},
                 }
         except Exception:
-            provider_response = (
-                "The assistant is temporarily unavailable. You can continue using "
-                "the standard venue and booking screens."
-            )
+            if provider is None and not isinstance(active_provider, RuleBasedAssistantProvider):
+                # Gemini is optional infrastructure. A transient model failure
+                # should leave core venue discovery and bookings usable.
+                plan = await RuleBasedAssistantProvider().complete(
+                    message=request.message,
+                    state=dict(conversation.state),
+                )
+                invocations = plan.tool_calls
+                provider_response = plan.response
+                if plan.state_patch:
+                    conversation.state = {
+                        **conversation.state,
+                        **{k: v for k, v in plan.state_patch.items() if k in {"intent", "slots"}},
+                    }
+            else:
+                provider_response = (
+                    "The assistant is temporarily unavailable. You can continue using "
+                    "the standard venue and booking screens."
+                )
 
     if not invocations:
         response_text = (provider_response or "Please provide an assistant action to continue.")[

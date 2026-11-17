@@ -10,6 +10,7 @@ from app.models.booking import BookingStatus
 class ToolName(StrEnum):
     SEARCH_VENUES = "search_venues"
     CHECK_AVAILABILITY = "check_availability"
+    LIST_MY_ORGANIZATIONS = "list_my_organizations"
     GET_BOOKING_POLICY = "get_booking_policy"
     CREATE_BOOKING = "create_booking"
     LIST_MY_BOOKINGS = "list_my_bookings"
@@ -29,6 +30,7 @@ class SearchVenuesArguments(BaseModel):
     capacity: int | None = Field(default=None, gt=0)
     location: str | None = Field(default=None, max_length=255)
     facility_id: UUID | None = None
+    query: str | None = Field(default=None, min_length=1, max_length=180)
 
 
 class CheckAvailabilityArguments(BaseModel):
@@ -39,6 +41,8 @@ class CheckAvailabilityArguments(BaseModel):
     capacity: int | None = Field(default=None, gt=0)
     location: str | None = Field(default=None, max_length=255)
     facility_id: UUID | None = None
+    venue_id: UUID | None = None
+    venue_name: str | None = Field(default=None, min_length=1, max_length=180)
 
     @model_validator(mode="after")
     def validate_interval(self) -> "CheckAvailabilityArguments":
@@ -49,6 +53,12 @@ class CheckAvailabilityArguments(BaseModel):
         if self.ends_at - self.starts_at > timedelta(days=31):
             raise ValueError("availability window cannot exceed 31 days")
         return self
+
+
+class ListMyOrganizationsArguments(BaseModel):
+    """Deliberately empty: the requester identity is always server controlled."""
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class CreateBookingArguments(BaseModel):
