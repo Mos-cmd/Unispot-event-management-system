@@ -552,6 +552,13 @@ img { display: block; max-width: 100%; }
 .chat-message { max-width: 88%; padding: 10px 11px; border-radius: 12px; font-size: 9px; line-height: 1.55; }
 .chat-message--assistant { color: #424b68; background: #fff; border: 1px solid #eceef4; border-top-left-radius: 4px; }
 .chat-message--user { align-self: flex-end; color: white; background: var(--violet); border-top-right-radius: 4px; }
+.chat-assistant-notice { margin: 0 0 7px; padding: 6px 7px; color: #72520a; background: #fff7d6; border: 1px solid #f1dc94; border-radius: 6px; font-size: 8px; line-height: 1.45; }
+.chat-result { display: grid; gap: 7px; margin-top: 9px; }
+.chat-result__card { display: grid; gap: 4px; padding: 8px; color: var(--ink); background: #f7f7ff; border: 1px solid #deddfb; border-radius: 8px; }
+.chat-result__card strong { font-size: 10px; }
+.chat-result__card span, .chat-result__card small, .chat-result__notice { color: #59627d; font-size: 8px; line-height: 1.45; }
+.chat-result__card .button { justify-self: start; margin-top: 2px; }
+.chat-result__notice { margin: 0; }
 .chat-quick-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 .chat-compose { display: flex; gap: 7px; padding: 10px; background: #fff; border-top: 1px solid #eef0f5; }
 .chat-compose input { min-width: 0; flex: 1; padding: 0 11px; color: var(--ink); border: 1px solid #e4e6ef; border-radius: 21px; font-size: 10px; outline: 0; }

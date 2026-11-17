@@ -27,9 +27,23 @@ from app.services.assistant_conversation import (
     get_or_create_conversation,
     record_tool_call,
 )
-from app.services.assistant_provider import AssistantProvider, RuleBasedAssistantProvider
+from app.services.assistant_provider import (
+    AssistantProvider,
+    GeminiHighDemandError,
+    RuleBasedAssistantProvider,
+    build_assistant_provider,
+)
 from app.services.assistant_tools import AssistantConfirmationRequired, AssistantToolExecutor
 from app.services.booking_policy import BookingPolicyError
+
+_RULE_BASED_INPUT_NOTICE = (
+    "Basic assistant mode is active. For availability, use a timezone-qualified "
+    "format such as: 2026-12-04T14:00:00+03:00 to 2026-12-04T17:00:00+03:00 "
+    "for 80 people."
+)
+_GEMINI_HIGH_DEMAND_NOTICE = (
+    "Gemini is temporarily experiencing high demand, so I am using basic assistant mode."
+)
 
 
 async def process_assistant_message(
@@ -98,6 +112,7 @@ async def _process_turn(
 
     invocations: list[AssistantToolInvocation] = list(request.tool_calls)
     provider_response: str | None = None
+    provider_notice: str | None = None
     pending = _pending_action(conversation.state)
     if request.confirmed:
         if (
@@ -123,7 +138,9 @@ async def _process_turn(
         await session.commit()
 
     if not invocations:
-        active_provider = provider or RuleBasedAssistantProvider()
+        active_provider = provider or build_assistant_provider()
+        if isinstance(active_provider, RuleBasedAssistantProvider):
+            provider_notice = _RULE_BASED_INPUT_NOTICE
         try:
             async with asyncio.timeout(get_settings().assistant_timeout_seconds):
                 plan = await active_provider.complete(
@@ -139,11 +156,28 @@ async def _process_turn(
                     **conversation.state,
                     **{k: v for k, v in plan.state_patch.items() if k in {"intent", "slots"}},
                 }
-        except Exception:
-            provider_response = (
-                "The assistant is temporarily unavailable. You can continue using "
-                "the standard venue and booking screens."
-            )
+        except Exception as error:
+            if provider is None and not isinstance(active_provider, RuleBasedAssistantProvider):
+                # Gemini is optional infrastructure. A transient model failure
+                # should leave core venue discovery and bookings usable.
+                if isinstance(error, GeminiHighDemandError):
+                    provider_notice = f"{_GEMINI_HIGH_DEMAND_NOTICE} {_RULE_BASED_INPUT_NOTICE}"
+                plan = await RuleBasedAssistantProvider().complete(
+                    message=request.message,
+                    state=dict(conversation.state),
+                )
+                invocations = plan.tool_calls
+                provider_response = plan.response
+                if plan.state_patch:
+                    conversation.state = {
+                        **conversation.state,
+                        **{k: v for k, v in plan.state_patch.items() if k in {"intent", "slots"}},
+                    }
+            else:
+                provider_response = (
+                    "The assistant is temporarily unavailable. You can continue using "
+                    "the standard venue and booking screens."
+                )
 
     if not invocations:
         response_text = (provider_response or "Please provide an assistant action to continue.")[
@@ -161,6 +195,7 @@ async def _process_turn(
             conversation_id=conversation.id,
             message_id=assistant_message.id,
             response=response_text,
+            notice=provider_notice,
             state=conversation.state,
         )
 
@@ -287,6 +322,7 @@ async def _process_turn(
             _pending_action(conversation.state)
             and not (_pending_action(conversation.state) or {}).get("completed")
         ),
+        notice=provider_notice,
         state=conversation.state,
     )
 

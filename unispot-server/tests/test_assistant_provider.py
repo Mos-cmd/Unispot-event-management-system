@@ -1,7 +1,7 @@
 import pytest
 
 from app.schemas.assistant import ToolName
-from app.services.assistant_provider import RuleBasedAssistantProvider
+from app.services.assistant_provider import GeminiAssistantProvider, RuleBasedAssistantProvider
 
 
 @pytest.mark.asyncio
@@ -49,3 +49,54 @@ async def test_rule_provider_does_not_follow_sql_or_role_escalation_prompts() ->
     )
     assert plan.tool_calls == []
     assert "SQL" not in (plan.response or "")
+
+
+@pytest.mark.asyncio
+async def test_gemini_provider_validates_and_maps_a_structured_plan() -> None:
+    provider = GeminiAssistantProvider(api_key="test-key", model="test-model")
+
+    async def fake_generate(*, message: str, state: dict[str, object]) -> str:
+        assert "next Friday" in message
+        assert state == {}
+        return '''{
+          "response": "I will check suitable venues.",
+          "tool_calls": [{
+            "name": "check_availability",
+            "arguments": {
+              "starts_at": "2026-12-04T14:00:00+03:00",
+              "ends_at": "2026-12-04T17:00:00+03:00",
+              "capacity": 120
+            }
+          }],
+          "state_patch": {"intent": "check_availability", "slots": {"capacity": 120}}
+        }'''
+
+    provider._generate = fake_generate  # type: ignore[method-assign]
+    plan = await provider.complete(message="Find a hall next Friday for 120 people", state={})
+
+    assert plan.tool_calls[0].name is ToolName.CHECK_AVAILABILITY
+    assert plan.tool_calls[0].arguments["capacity"] == 120
+    assert plan.state_patch["intent"] == ToolName.CHECK_AVAILABILITY.value
+
+
+@pytest.mark.asyncio
+async def test_rule_provider_can_turn_selected_ids_into_a_booking_proposal() -> None:
+    provider = RuleBasedAssistantProvider()
+    venue_id = "123e4567-e89b-12d3-a456-426614174000"
+    organization_id = "223e4567-e89b-12d3-a456-426614174000"
+    state = {
+        "intent": ToolName.CREATE_BOOKING.value,
+        "slots": {
+            "venue_id": venue_id,
+            "organization_id": organization_id,
+            "event_name": "Society meeting",
+            "capacity": 80,
+            "starts_at": "2026-12-04T14:00:00+03:00",
+            "ends_at": "2026-12-04T17:00:00+03:00",
+        },
+    }
+
+    plan = await provider.complete(message="Continue", state=state)
+
+    assert plan.tool_calls[0].name is ToolName.CREATE_BOOKING
+    assert plan.tool_calls[0].arguments["venue_id"] == venue_id

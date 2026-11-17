@@ -11,15 +11,18 @@ it references prior turns and keeps multi-turn tool flows (booking creation,
 availability checks) alive across messages.
 """
 
+import json
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Protocol
+from zoneinfo import ZoneInfo
 
+from app.core.config import get_settings
 from app.schemas.assistant import AssistantToolInvocation, ToolName
 from app.services.assistant_knowledge import (
-    FAQS,
     ALL_PAGES,
+    FAQS,
     ROLE_GUIDES,
     SITE_OVERVIEW,
     describe_page,
@@ -37,6 +40,99 @@ class AssistantProvider(Protocol):
     async def complete(
         self, *, message: str, state: dict[str, object]
     ) -> AssistantProviderPlan: ...
+
+
+class GeminiHighDemandError(RuntimeError):
+    """Gemini temporarily rejected a request because capacity is exhausted."""
+
+
+class GeminiAssistantProvider:
+    """Gemini planner constrained to UniSpot's server-owned assistant tools."""
+
+    def __init__(self, *, api_key: str, model: str) -> None:
+        self._api_key = api_key
+        self._model = model
+
+    async def complete(
+        self, *, message: str, state: dict[str, object]
+    ) -> AssistantProviderPlan:
+        raw = await self._generate(message=message, state=state)
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as error:
+            raise ValueError("Gemini returned an invalid assistant plan") from error
+        if not isinstance(payload, dict):
+            raise ValueError("Gemini returned an invalid assistant plan")
+
+        response = payload.get("response")
+        if response is not None and not isinstance(response, str):
+            raise ValueError("Gemini returned an invalid response")
+        calls = payload.get("tool_calls", [])
+        if not isinstance(calls, list):
+            raise ValueError("Gemini returned invalid tool calls")
+        state_patch = payload.get("state_patch", {})
+        if not isinstance(state_patch, dict):
+            raise ValueError("Gemini returned invalid conversation state")
+        return AssistantProviderPlan(
+            response=response,
+            tool_calls=[AssistantToolInvocation.model_validate(call) for call in calls],
+            state_patch=state_patch,
+        )
+
+    async def _generate(self, *, message: str, state: dict[str, object]) -> str:
+        """Call Gemini without enabling automatic tool execution."""
+        from google import genai
+        from google.genai import types
+
+        now = datetime.now(ZoneInfo("Africa/Nairobi"))
+        prompt = {
+            "message": message,
+            "conversation_state": state,
+            "current_time_africa_nairobi": now.isoformat(),
+        }
+        client = genai.Client(api_key=self._api_key)
+        try:
+            response = await client.aio.models.generate_content(
+                model=self._model,
+                contents=json.dumps(prompt, default=str),
+                config=types.GenerateContentConfig(
+                    system_instruction=_GEMINI_SYSTEM_INSTRUCTION,
+                    response_mime_type="application/json",
+                ),
+            )
+        except Exception as error:
+            if getattr(error, "code", None) == 503:
+                raise GeminiHighDemandError("Gemini is temporarily under high demand") from error
+            raise
+        return response.text or ""
+
+
+_GEMINI_SYSTEM_INSTRUCTION = (
+    "You are the UniSpot campus venue assistant. Return exactly one JSON object with "
+    "keys response (string or null), tool_calls (array), and state_patch (object). "
+    "Allowed tools: search_venues, check_availability, list_my_organizations, "
+    "get_booking_policy, list_my_bookings, create_booking, and cancel_my_booking. "
+    "For check_availability use starts_at, ends_at, optional capacity, location, "
+    "facility_id, venue_id, and venue_name. For create_booking use venue_id, "
+    "organization_id, event_name, optional event_description, expected_attendance, "
+    "starts_at, and ends_at. Interpret ordinary dates and times in Africa/Nairobi "
+    "unless the user specifies a timezone, and convert them to timezone-qualified "
+    "ISO-8601 strings. Never invent IDs, event names, attendance, or times. Store "
+    "collected booking fields in state_patch.slots. First check availability, then "
+    "obtain the user's organizations if required, and propose create_booking only "
+    "when all fields are known. Explain missing details concisely. A proposed write "
+    "is not a confirmation; the server controls confirmation and tool execution."
+)
+
+
+def build_assistant_provider() -> AssistantProvider:
+    settings = get_settings()
+    key = settings.gemini_api_key
+    if key is not None and key.get_secret_value().strip():
+        return GeminiAssistantProvider(
+            api_key=key.get_secret_value(), model=settings.gemini_model
+        )
+    return RuleBasedAssistantProvider()
 
 
 class RuleBasedAssistantProvider:
@@ -144,6 +240,14 @@ class RuleBasedAssistantProvider:
             return AssistantProviderPlan(
                 tool_calls=[AssistantToolInvocation(name=ToolName.LIST_MY_BOOKINGS, arguments={})]
             )
+        if "my organization" in normalized or "my organisation" in normalized:
+            return AssistantProviderPlan(
+                tool_calls=[
+                    AssistantToolInvocation(
+                        name=ToolName.LIST_MY_ORGANIZATIONS, arguments={}
+                    )
+                ]
+            )
         if any(word in normalized for word in ("book", "reservation")):
             return AssistantProviderPlan(
                 response=(
@@ -196,7 +300,31 @@ class RuleBasedAssistantProvider:
         return None
 
     def _continue_booking(self, message: str, slots: dict[str, object]) -> AssistantProviderPlan:
-        slots = _extract_slots(message, slots)
+        slots = _extract_slots(message, {"slots": slots})
+        if not slots.get("venue_id") and slots.get("starts_at") and slots.get("ends_at"):
+            arguments = {
+                key: slots[key]
+                for key in ("starts_at", "ends_at", "capacity", "location")
+                if key in slots
+            }
+            return AssistantProviderPlan(
+                response="I will check the venues that can be booked for that time.",
+                tool_calls=[
+                    AssistantToolInvocation(
+                        name=ToolName.CHECK_AVAILABILITY,
+                        arguments=arguments,
+                    )
+                ],
+                state_patch={"intent": ToolName.CREATE_BOOKING.value, "slots": slots},
+            )
+        if not slots.get("organization_id") and slots.get("venue_id"):
+            return AssistantProviderPlan(
+                response="Choose the organization that will make this booking.",
+                tool_calls=[
+                    AssistantToolInvocation(name=ToolName.LIST_MY_ORGANIZATIONS, arguments={})
+                ],
+                state_patch={"intent": ToolName.CREATE_BOOKING.value, "slots": slots},
+            )
         missing = [
             label
             for key, label in (
@@ -209,11 +337,26 @@ class RuleBasedAssistantProvider:
             )
             if key not in slots
         ]
+        if not missing:
+            return AssistantProviderPlan(
+                tool_calls=[
+                    AssistantToolInvocation(
+                        name=ToolName.CREATE_BOOKING,
+                        arguments={
+                            "venue_id": slots["venue_id"],
+                            "organization_id": slots["organization_id"],
+                            "event_name": slots["event_name"],
+                            "expected_attendance": slots["capacity"],
+                            "starts_at": slots["starts_at"],
+                            "ends_at": slots["ends_at"],
+                        },
+                    )
+                ],
+                state_patch={"intent": ToolName.CREATE_BOOKING.value, "slots": slots},
+            )
         return AssistantProviderPlan(
             response=(
                 "I still need: " + ", ".join(missing) + "."
-                if missing
-                else "I have the booking details. Select a venue and organization to continue."
             ),
             state_patch={"intent": ToolName.CREATE_BOOKING.value, "slots": slots},
         )
@@ -221,7 +364,7 @@ class RuleBasedAssistantProvider:
     def _continue_availability(
         self, message: str, slots: dict[str, object]
     ) -> AssistantProviderPlan:
-        slots = _extract_slots(message, slots)
+        slots = _extract_slots(message, {"slots": slots})
         if slots.get("starts_at") and slots.get("ends_at"):
             arguments: dict[str, object] = {
                 "starts_at": slots["starts_at"],
@@ -407,6 +550,19 @@ def _extract_slots(message: str, state: dict[str, object]) -> dict[str, object]:
     capacity = re.search(r"\b(\d{1,5})\s*(?:people|persons|attendees|capacity)\b", message, re.I)
     if capacity:
         slots["capacity"] = int(capacity.group(1))
+    venue_id = re.search(r"\b(?:venue|hall)\s+(?:id\s+)?([0-9a-f-]{36})\b", message, re.I)
+    if venue_id:
+        slots["venue_id"] = venue_id.group(1)
+    organization_id = re.search(
+        r"\b(?:organization|organisation)\s+(?:id\s+)?([0-9a-f-]{36})\b",
+        message,
+        re.I,
+    )
+    if organization_id:
+        slots["organization_id"] = organization_id.group(1)
+    event_name = re.search(r"\b(?:event|called|named)\s+['\"]([^'\"]{1,200})['\"]", message, re.I)
+    if event_name:
+        slots["event_name"] = event_name.group(1).strip()
     location = re.search(r"\b(?:in|at|near)\s+([A-Za-z][A-Za-z -]{1,40})", message)
     if location:
         slots["location"] = location.group(1).strip(" .,")
@@ -427,4 +583,11 @@ def _extract_slots(message: str, state: dict[str, object]) -> dict[str, object]:
     return slots
 
 
-__all__ = ["AssistantProvider", "AssistantProviderPlan", "RuleBasedAssistantProvider"]
+__all__ = [
+    "AssistantProvider",
+    "AssistantProviderPlan",
+    "GeminiHighDemandError",
+    "GeminiAssistantProvider",
+    "RuleBasedAssistantProvider",
+    "build_assistant_provider",
+]

@@ -1,9 +1,16 @@
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking import Booking, BookingSource
+from app.models.organization import Organization, OrganizationStatus
+from app.models.organization_membership import (
+    MembershipRole,
+    MembershipStatus,
+    OrganizationMembership,
+)
 from app.models.user import User
 from app.models.venue import Venue, VenueStatus
 from app.schemas.assistant import (
@@ -11,6 +18,7 @@ from app.schemas.assistant import (
     CheckAvailabilityArguments,
     CreateBookingArguments,
     ListMyBookingsArguments,
+    ListMyOrganizationsArguments,
     SearchVenuesArguments,
     ToolName,
 )
@@ -21,6 +29,7 @@ from app.services.booking_policy import (
     BOOKING_MAX_DURATION,
     BOOKING_MIN_LEAD_TIME,
     BookingPolicyError,
+    operating_hours_violations,
 )
 from app.services.booking_service import (
     BookingConflictError,
@@ -57,6 +66,8 @@ class AssistantToolExecutor:
             return await self.search_venues(arguments), None
         if name is ToolName.CHECK_AVAILABILITY:
             return await self.check_availability(arguments), None
+        if name is ToolName.LIST_MY_ORGANIZATIONS:
+            return await self.list_organizations(arguments), None
         if name is ToolName.GET_BOOKING_POLICY:
             return self.get_booking_policy(arguments), None
         if name is ToolName.LIST_MY_BOOKINGS:
@@ -78,6 +89,7 @@ class AssistantToolExecutor:
             capacity=data.capacity,
             location=data.location,
             facility_id=data.facility_id,
+            query=data.query,
             status=VenueStatus.ACTIVE,
         )
         return {"venues": [_venue_summary(venue) for venue in venues]}
@@ -93,11 +105,68 @@ class AssistantToolExecutor:
             capacity=data.capacity,
             location=data.location,
             facility_id=data.facility_id,
+            venue_id=data.venue_id,
+            venue_name=data.venue_name,
         )
+        messages: list[str] = []
+        now = datetime.now(UTC)
+        if data.starts_at < now + BOOKING_MIN_LEAD_TIME:
+            required_hours = int(BOOKING_MIN_LEAD_TIME.total_seconds() // 3600)
+            messages.append(
+                f"Bookings need at least {required_hours} hours' notice."
+            )
+        if data.ends_at - data.starts_at > BOOKING_MAX_DURATION:
+            max_hours = int(BOOKING_MAX_DURATION.total_seconds() // 3600)
+            messages.append(
+                f"Bookings cannot exceed {max_hours} hours."
+            )
+
+        available_venues: list[dict[str, object]] = []
+        unavailable_venues: list[dict[str, object]] = []
+        for venue in venues:
+            violations = await operating_hours_violations(
+                self.session, venue, data.starts_at, data.ends_at
+            )
+            if violations:
+                unavailable_venues.append(
+                    {
+                        **_venue_summary(venue),
+                        "reasons": [violation.message for violation in violations],
+                    }
+                )
+            elif not messages:
+                available_venues.append(_venue_summary(venue))
         return {
             "starts_at": data.starts_at.isoformat(),
             "ends_at": data.ends_at.isoformat(),
-            "available_venues": [_venue_summary(venue) for venue in venues],
+            "available_venues": available_venues,
+            "unavailable_venues": unavailable_venues,
+            "booking_ready": not messages,
+            "messages": messages,
+        }
+
+    async def list_organizations(self, arguments: dict[str, object]) -> dict[str, object]:
+        ListMyOrganizationsArguments.model_validate(arguments)
+        result = await self.session.execute(
+            select(Organization)
+            .join(
+                OrganizationMembership,
+                OrganizationMembership.organization_id == Organization.id,
+            )
+            .where(
+                OrganizationMembership.user_id == self.requester.id,
+                OrganizationMembership.membership_role == MembershipRole.ORGANIZER,
+                OrganizationMembership.status == MembershipStatus.ACTIVE,
+                Organization.status == OrganizationStatus.ACTIVE,
+            )
+            .order_by(Organization.name)
+        )
+        organizations = result.scalars().all()
+        return {
+            "organizations": [
+                {"id": str(organization.id), "name": organization.name}
+                for organization in organizations
+            ]
         }
 
     def get_booking_policy(self, arguments: dict[str, object]) -> dict[str, object]:
@@ -185,6 +254,7 @@ def _venue_summary(venue: Venue) -> dict[str, object]:
         "location": venue.location,
         "capacity": venue.capacity,
         "description": venue.description,
+        "venue_type": venue.venue_type,
         "timezone": venue.timezone,
     }
 
