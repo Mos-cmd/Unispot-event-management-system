@@ -89,6 +89,12 @@ async def login(
         return await login_user(session, str(data.email), data.password)
     except ValueError as error:
         raise HTTPException(401, "Invalid email or password") from error
+    except Exception:
+        logger.exception("Unexpected error during login")
+        raise HTTPException(
+            status_code=500,
+            detail="Internal server error",
+        ) 
 
 
 @router.post("/token", response_model=TokenResponse)

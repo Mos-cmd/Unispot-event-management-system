@@ -117,9 +117,10 @@ export function SignupPage() {
         password: String(data.get('password')),
       });
       let signupMessage = res.message || 'Account created. Please check your email to verify, then log in.';
-      if (requestedAccess !== 'Student') {
-        signupMessage += ` ${requestedAccess} access must be approved by an administrator.`;
-      }
+      // Temporarily disabled: users should be able to log in immediately after signup.
+      // if (requestedAccess !== 'Student') {
+      //   signupMessage += ` ${requestedAccess} access must be approved by an administrator.`;
+      // }
       navigate('/login', {
         replace: true,
         state: { registeredEmail: email, signupMessage, from: from && from !== '/' ? from : undefined },
@@ -136,8 +137,8 @@ export function SignupPage() {
       <div className="form-field"><label htmlFor="signup-email">Email address</label><input id="signup-email" name="email" type="email" autoComplete="email" required placeholder="Enter your email address" /></div>
       <div className="form-grid form-grid--auth"><div className="form-field"><label htmlFor="signup-password">Password</label><PasswordInput id="signup-password" name="password" autoComplete="new-password" required minLength={8} placeholder="Create a password" /></div><div className="form-field"><label htmlFor="signup-confirm">Confirm password</label><PasswordInput id="signup-confirm" name="confirmPassword" autoComplete="new-password" required minLength={8} placeholder="Confirm password" /></div></div>
       <fieldset className="account-type-field"><legend>Access you need:</legend>
-        <div className="account-type-grid">{['Student', 'Organizer', 'University Staff', 'Service Provider'].map((type) => <label className={`account-type-card${requestedAccess === type ? ' account-type-card--selected' : ''}`} key={type}><input type="radio" name="accessType" value={type} checked={requestedAccess === type} onChange={() => setRequestedAccess(type)} /><span className="account-radio" aria-hidden="true" /> <span><strong>{type}</strong><small>{type === 'Student' ? 'Basic access for events and your own requests.' : 'Requires administrator approval after signup.'}</small></span></label>)}</div>
-        <p className="muted" style={{ marginTop: '0.75rem' }}>Public signup creates Student access only. Organizer, University Staff, and Service Provider access must be approved and assigned by an administrator. Admin access is never granted from signup.</p>
+        <div className="account-type-grid">{['Student', 'Organizer', 'University Staff', 'Service Provider'].map((type) => <label className={`account-type-card${requestedAccess === type ? ' account-type-card--selected' : ''}`} key={type}><input type="radio" name="accessType" value={type} checked={requestedAccess === type} onChange={() => setRequestedAccess(type)} /><span className="account-radio" aria-hidden="true" /> <span><strong>{type}</strong><small>{type === 'Student' ? 'Basic access for events and your own requests.' : 'Additional access can be assigned separately.'}</small></span></label>)}</div>
+        <p className="muted" style={{ marginTop: '0.75rem' }}>You can log in immediately after creating your account. Additional access is assigned separately. Admin access is never granted from signup.</p>
       </fieldset>
       <p className="terms-copy">By creating an account, you agree to our <a href="#terms" onClick={(event) => event.preventDefault()}>Terms of Service</a> and <a href="#privacy" onClick={(event) => event.preventDefault()}>Privacy Policy</a>.</p>
       <button className="button button--primary button--full auth-submit" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Creating account...' : 'Create account'} <ArrowRight size={17} /></button>
