@@ -136,4 +136,5 @@ class AssistantMessageResponse(BaseModel):
     response: str
     tool_results: list[AssistantToolResult] = Field(default_factory=list)
     pending_confirmation: bool = False
+    notice: str | None = None
     state: dict[str, object] = Field(default_factory=dict)

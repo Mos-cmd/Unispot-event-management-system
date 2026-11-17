@@ -39,7 +39,7 @@ export type AssistantOrganizationsData = { organizations: { id: string; name: st
 export type AssistantPendingConfirmation = { tool: 'create_booking' | 'cancel_my_booking'; arguments: Record<string, unknown>; confirmation_id: string; idempotency_key?: string; completed?: boolean; };
 export type AssistantConversationState = { intent?: string; slots?: Record<string, unknown>; pending_confirmation?: AssistantPendingConfirmation; };
 export type AssistantMessageInput = { conversation_id?: string; message: string; tool_calls?: AssistantToolCall[]; confirmed?: boolean; confirmation_id?: string; };
-export type AssistantMessageResponse = { conversation_id: string; message_id: string; response: string; tool_results: AssistantToolResult[]; pending_confirmation: boolean; state: AssistantConversationState; };
+export type AssistantMessageResponse = { conversation_id: string; message_id: string; response: string; tool_results: AssistantToolResult[]; pending_confirmation: boolean; notice?: string | null; state: AssistantConversationState; };
 
 export type NotificationType = string;
 export type NotificationDeliveryStatus = 'PENDING' | 'SENT' | 'FAILED' | 'READ';

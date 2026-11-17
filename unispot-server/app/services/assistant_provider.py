@@ -42,6 +42,10 @@ class AssistantProvider(Protocol):
     ) -> AssistantProviderPlan: ...
 
 
+class GeminiHighDemandError(RuntimeError):
+    """Gemini temporarily rejected a request because capacity is exhausted."""
+
+
 class GeminiAssistantProvider:
     """Gemini planner constrained to UniSpot's server-owned assistant tools."""
 
@@ -87,14 +91,19 @@ class GeminiAssistantProvider:
             "current_time_africa_nairobi": now.isoformat(),
         }
         client = genai.Client(api_key=self._api_key)
-        response = await client.aio.models.generate_content(
-            model=self._model,
-            contents=json.dumps(prompt, default=str),
-            config=types.GenerateContentConfig(
-                system_instruction=_GEMINI_SYSTEM_INSTRUCTION,
-                response_mime_type="application/json",
-            ),
-        )
+        try:
+            response = await client.aio.models.generate_content(
+                model=self._model,
+                contents=json.dumps(prompt, default=str),
+                config=types.GenerateContentConfig(
+                    system_instruction=_GEMINI_SYSTEM_INSTRUCTION,
+                    response_mime_type="application/json",
+                ),
+            )
+        except Exception as error:
+            if getattr(error, "code", None) == 503:
+                raise GeminiHighDemandError("Gemini is temporarily under high demand") from error
+            raise
         return response.text or ""
 
 
@@ -577,6 +586,7 @@ def _extract_slots(message: str, state: dict[str, object]) -> dict[str, object]:
 __all__ = [
     "AssistantProvider",
     "AssistantProviderPlan",
+    "GeminiHighDemandError",
     "GeminiAssistantProvider",
     "RuleBasedAssistantProvider",
     "build_assistant_provider",

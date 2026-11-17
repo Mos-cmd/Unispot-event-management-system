@@ -13,7 +13,7 @@ import type {
 } from '../api/types';
 import { useAuth } from '../auth/AuthProvider';
 
-type Message = { from: 'assistant' | 'user'; text: string; results?: AssistantToolResult[] };
+type Message = { from: 'assistant' | 'user'; text: string; notice?: string; results?: AssistantToolResult[] };
 type PendingConfirmation = { conversationId: string; confirmationId: string };
 
 function getPendingConfirmation(response: AssistantMessageResponse): PendingConfirmation | null {
@@ -108,7 +108,12 @@ export function ChatWidget() {
 
   const appendResponse = (response: AssistantMessageResponse) => {
     setConversationId(response.conversation_id);
-    setMessages((current) => [...current, { from: 'assistant', text: responseText(response), results: response.tool_results }]);
+    setMessages((current) => [...current, {
+      from: 'assistant',
+      text: responseText(response),
+      notice: response.notice || undefined,
+      results: response.tool_results,
+    }]);
     setPendingConfirmation(getPendingConfirmation(response));
     if (response.tool_results.some((result) => result.status === 'succeeded' && (result.name === 'create_booking' || result.name === 'cancel_my_booking'))) {
       window.dispatchEvent(new Event('unispot:bookings-changed'));
@@ -184,7 +189,7 @@ export function ChatWidget() {
         <section className="chat-panel" role="region" aria-labelledby="assistant-title">
           <header className="chat-header"><span className="chat-avatar"><Bot size={20} /></span><div><strong id="assistant-title">UniSpot Assistant</strong><small>Ask about the site, events, venues, or bookings</small></div><button className="chat-window-action" type="button" aria-label="Minimize chat" onClick={closeChat}><Minus size={17} /></button><button className="chat-window-action" type="button" aria-label="Close chat" onClick={closeChat}><X size={17} /></button></header>
           <div className="chat-messages" aria-live="polite" aria-relevant="additions">
-            {messages.map((message, index) => <div className={`chat-message chat-message--${message.from}`} key={`${message.from}-${index}`}><span>{message.text}</span>{message.from === 'assistant' && message.results && <AssistantResults results={message.results} onVenueSelect={chooseVenue} onOrganizationSelect={chooseOrganization} disabled={isSending} />}</div>)}
+            {messages.map((message, index) => <div className={`chat-message chat-message--${message.from}`} key={`${message.from}-${index}`}>{message.notice && <p className="chat-assistant-notice" role="status">{message.notice}</p>}<span>{message.text}</span>{message.from === 'assistant' && message.results && <AssistantResults results={message.results} onVenueSelect={chooseVenue} onOrganizationSelect={chooseOrganization} disabled={isSending} />}</div>)}
             {pendingConfirmation && <div className="chat-quick-actions"><button type="button" className="button button--primary button--small" onClick={() => void confirmPendingAction()} disabled={isSending}>{isSending ? 'Confirming…' : 'Confirm action'}</button><button type="button" className="button button--soft button--small" onClick={changePendingAction} disabled={isSending}>Change request</button></div>}
             {isSending && <p className="form-status">Assistant is thinking…</p>}
             {error && <p className="form-error" role="alert">{error}</p>}
