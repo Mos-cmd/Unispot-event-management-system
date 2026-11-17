@@ -31,3 +31,7 @@ unispot-server/make_admin2.py
 unispot-server/promote_user.py
 unispot-server/test_server.py
 
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
